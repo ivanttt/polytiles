@@ -146,7 +146,7 @@ class FileWriter:
 
 # https://github.com/mapbox/mbutil/blob/master/mbutil/util.py
 class MBTilesWriter:
-	def __init__(self, filename, setname, overlay=False, version=1, description=None, format='png256', tms=False):
+	def __init__(self, filename, setname, overlay=False, version=1, description=None, format='png256', tms=True):
 		self.format = format
 		self.filename = filename
 		self.tms = tms
@@ -266,7 +266,7 @@ class ThreadedWriterWrapper(multiprocessing.Process):
 		self.p_pipe.send(('close', None))
 		self.join()
 
-def multi_MBTilesWriter(threads, filename, setname, overlay=False, version=1, description=None, format='png256', tms=False):
+def multi_MBTilesWriter(threads, filename, setname, overlay=False, version=1, description=None, format='png256', tms=True):
 	params = {'filename': filename, 'setname': setname, 'overlay': overlay, 'version': version, 'description': description, 'format': format, 'tms': tms}
 	if threads == 1:
 		return MBTilesWriter(**params)
@@ -574,6 +574,7 @@ if __name__ == "__main__":
 	if HAS_SQLITE:
 		apg_output.add_argument('-m', '--mbtiles', help='generate mbtiles file')
 		apg_output.add_argument('--name', help='name for mbtiles', default='Test MBTiles')
+		apg_output.add_argument('--no-tms', action='store_true', help='don''t use TMS fromat for mbtiles (not recommend)', default=False)
 		apg_output.add_argument('--overlay', action='store_true', help='if this layer is an overlay (for mbtiles metadata)', default=False)
 	apg_output.add_argument('-x', '--export', type=argparse.FileType('w'), metavar='TILES.LST', help='save tile list into file')
 	apg_output.add_argument('-z', '--zooms', type=int, nargs=2, metavar=('ZMIN', 'ZMAX'), help='range of zoom levels to render (default: 6 12)', default=(6, 12))
@@ -604,7 +605,7 @@ if __name__ == "__main__":
 	if options.tiledir:
 		writer = FileWriter(options.tiledir, format=options.format, tms=options.tms, overwrite=not options.skip_existing)
 	elif HAS_SQLITE and options.mbtiles:
-		writer = multi_MBTilesWriter(options.threads, options.mbtiles, options.name, overlay=options.overlay, format=options.format, tms=options.tms)
+		writer = multi_MBTilesWriter(options.threads, options.mbtiles, options.name, overlay=options.overlay, format=options.format, tms=not options.no_tms)
 	elif options.export:
 		writer = ListWriter(options.export)
 	else:
